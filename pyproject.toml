@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior can happen.
+
+[project]
+name = "telepostkeeper"
+version = "0.1"
+
+description = "🦜 telepostkeeper"
+readme = "README.md"
+
+requires-python = ">=3.8"
+
+license = {file = "LICENSE.txt"}
+
+keywords = ['telepostkeeper']
+
+authors = [
+  {name = "Andrew Levin", email = "author@example.com" }
+]
+
+maintainers = [
+  {name = "A. Great Maintainer", email = "maintainer@example.com" }
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Build Tools",
+
+  "License :: OSI Approved :: MIT License",
+
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+dependencies = [
+  'aiogram',
+]
+
+
+[project.optional-dependencies]
+dev = ["check-manifest"]
+test = ["coverage"]
+
+[project.urls]
+"Homepage" = "https://github.com/andrewalevin"
+"Bug Reports" = "https://github.com/andrewalevin"
+"Funding" = "https://donate.pypi.org"
+"Say Thanks!" = "https://github.com/andrewalevin"
+"Source" = "https://github.com/andrewalevin"
+
+[project.scripts]
+telepostkeeper = "telepostkeeper:main"
+#ytb2audiobotrouter = "ytb2audiobot.ytb2audiobot_router:main"
+
+[tool.setuptools]
+package-data = {"sample" = ["*.dat"]}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
