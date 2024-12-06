@@ -1,9 +1,12 @@
 import argparse
 import pathlib
+import pprint
 import sys
 from datetime import date, datetime
 import asyncio
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 from aiogram.types import Message
 from dotenv import load_dotenv
 import os
@@ -20,18 +23,17 @@ if not token:
     print(f'🔴 No {ENV_NAME_BOT_TOKEN} variable set in env. Make add and restart bot.')
     sys.exit()
 
-store = os.getenv("ENV_NAME_STORE")
+store = os.getenv(ENV_NAME_STORE)
 if not store or store == ".":
     store = pathlib.Path(".")
 else:
     store = pathlib.Path(store.strip())
-
 store.mkdir(parents=True, exist_ok=True)
 
 channels_list = [int(item) for item in os.getenv(ENV_NAME_CHANNELS, '').strip().split(',') if item.isdigit()]
 
 
-bot = Bot(token=token)
+bot = Bot(token=token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
 async def update_chat_index(sender, chat_dir: pathlib.Path):
@@ -67,9 +69,11 @@ async def update_chat_index(sender, chat_dir: pathlib.Path):
 def get_real_chat_id(chat_id_raw):
     return -chat_id_raw - 1000000000000
 
+
 @dp.channel_post()
 async def handler_channel_post(message: Message):
     print('💈 handler_channel_post')
+    print('🔫 Post: ', message.message_id)
 
     real_chat_id = get_real_chat_id(message.sender_chat.id)
     if real_chat_id not in channels_list:
@@ -82,14 +86,43 @@ async def handler_channel_post(message: Message):
     post_file = chat_dir / f'{now.year}' / f'{now.month:02}' / f'{message.message_id}.yaml'
     post_file.parent.mkdir(exist_ok=True, parents=True)
 
-    data = {
-        'date': message.date.__str__(),
-        'type': 'text',
-        'html_text': message.html_text,
-    }
+    context = dict()
+
+    context['date'] = message.date
+    context['type'] = ''
+    context['media_group_id'] = ''
+
+    if message.media_group_id:
+        context['media_group_id'] = message.media_group_id
+
+    if message.text:
+        context['text'] = message.html_text
+        context['type'] = 'text'
+
+    if message.photo:
+        print('🖼 Photo: ')
+
+        photo_maxi_size = message.photo[-1]
+        photo_file = await bot.get_file(photo_maxi_size.file_id)
+
+        print('file_unique_id: ', photo_file.file_unique_id)
+
+        photo_file_path = pathlib.Path(photo_file.file_path)
+        ext = photo_file_path.suffix
+
+        photo_store_file = post_file.parent / f'{message.message_id}-photo{ext}'
+
+        await bot.download_file(photo_file.file_path, photo_store_file)
+
+        context['type'] = 'photo'
+        context['photo'] = photo_store_file.name
+
+        if hasattr(message, 'caption'):
+            context['text'] = message.html_text
+
 
     with post_file.open('w') as f:
-        yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        yaml.dump(context, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
 
 async def run_bot():
