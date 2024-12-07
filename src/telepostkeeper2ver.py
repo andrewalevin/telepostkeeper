@@ -6,10 +6,11 @@ import sys
 from datetime import date, datetime
 import asyncio
 
+from aiogram.types import PhotoSize
 from dotenv import load_dotenv
 import os
 import yaml
-from telegram import Update, Video, Document, Audio
+from telegram import Update, Video, Document, Audio, Message
 from telegram._files._basethumbedmedium import _BaseThumbedMedium
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
@@ -36,7 +37,7 @@ channels_list = [int(item) for item in os.getenv(ENV_NAME_CHANNELS, '').strip().
 
 
 async def update_chat_about_info(full_name: str, chat_dir: pathlib.Path):
-    print('🦠 update_chat_index: ')
+    print('🦠 update_chat_about: ')
 
     last_full_name = ''
     about_yaml = chat_dir / f'about.yaml'
@@ -73,46 +74,86 @@ async def empty_task():
 async def make_thumbnail(thumbnail, root_path, post_id):
     context = dict()
 
-    context['file_size'] = thumbnail.file_size
-    context['height'] = thumbnail.height
-    context['width'] = thumbnail.width
+    context['thumbnail_file_size'] = thumbnail.file_size
+    context['thumbnail_height'] = thumbnail.height
+    context['thumbnail_width'] = thumbnail.width
 
     thumb_file = await thumbnail.get_file()
     thumb_path = pathlib.Path(thumb_file.file_path)
     thumb_store_path = root_path / f'{post_id}-thumbnail{thumb_path.suffix}'
 
-    context['path'] = thumb_store_path.as_posix()
-    print('THUMB CONTEXT: ', context)
+    context['thumbnail_path'] = thumb_store_path.as_posix()
 
     try:
-        task_created = asyncio.create_task(thumb_file.download_to_drive(thumb_store_path))
+        task_created = thumb_file.download_to_drive(thumb_store_path)
     except Exception as e:
         print('Exception in Thumb')
-
-        task_created = asyncio.create_task(empty_task())
+        task_created = empty_task()
 
     return context, task_created
 
 
-def get_extension(file: Video | Audio | Document) -> str:
+def get_extension(media_obj: Video | Audio | Document | PhotoSize) -> str:
     ext = '.file'
 
-    if hasattr(file, 'file_name'):
-        if file.file_name:
-            try:
-                ext = pathlib.Path(file.file_name).suffix
-            except Exception as e:
-                ext = '.file'
+    print('🔬 Extension')
+    pprint.pprint(media_obj)
+    print()
+    print('media_obj.mime_type: ', media_obj.mime_type)
+    print()
 
-    if hasattr(file, 'mime_type'):
-        if file.mime_type:
+    if hasattr(media_obj, 'file_name'):
+        if media_obj.file_name:
             try:
-                ext = file.mime_type.split('/')[-1]
+                ext = pathlib.Path(media_obj.file_name).suffix
+            except Exception as e:
+                print(f'🎸 Errro {e}')
+
+    if ext != '.file':
+        return ext
+
+    if hasattr(media_obj, 'mime_type'):
+        print('media_obj.mime_type: ', media_obj.mime_type)
+        if media_obj.mime_type:
+            try:
+                ext = media_obj.mime_type.split('/')[-1]
                 ext = f'.{ext}'
             except Exception as e:
-                ext = '.file'
+                print(f'🎸 Errro {e}')
 
     return ext
+
+
+async def make_file_download(media_obj_type: str, media_obj: any, file_path: pathlib.Path):
+    print('Download: ')
+    pprint.pprint(media_obj)
+    print()
+
+    if media_obj_type == 'photo':
+        media_obj = media_obj[-1]
+        print('Photo ')
+        pprint.pprint(media_obj)
+
+    if not hasattr(media_obj, 'get_file'):
+        return
+
+    try:
+        _file = await media_obj.get_file()
+        await _file.download_to_drive(file_path)
+    except Exception as e:
+        print(f'🍎 Error Doanloading: \t {e}')
+
+    # todo make chunk download
+
+
+def identify_media_type(message: Message):
+    media_types = ['photo', 'document', 'audio', 'video', 'voice']
+    for media_type in media_types:
+        if hasattr(message, media_type):
+            if getattr(message, media_type):
+                return media_type
+    return ''
+
 
 async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.channel_post:
@@ -129,162 +170,78 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
         return
 
     chat_dir = store / f'chat-{real_chat_id}'
-    asyncio.create_task(update_chat_about_info(message.sender_chat.full_name, chat_dir))
+    task_about_update = update_chat_about_info(message.sender_chat.full_name, chat_dir)
 
     now = datetime.now()
-    post_file = chat_dir / f'{now.year}' / f'{now.month:02}' / f'{message.message_id}.yaml'
-    post_file.parent.mkdir(exist_ok=True, parents=True)
+    post_dir = chat_dir / f'{now.year}' / f'{now.month:02}'
+    post_dir.mkdir(exist_ok=True, parents=True)
+
+    pending_task_download_thumbnail = empty_task()
+    pending_task_download_media_heavy = empty_task()
 
     context = dict()
 
     context['date'] = message.date
-    context['type'] = ''
-
-    if message.media_group_id:
-        context['media_group_id'] = message.media_group_id
-
-    if message.text:
-        context['type'] = 'text'
-        context['text'] = message.text_html
-
-    if message.caption:
-        context['caption'] = message.caption_html
-
-    pending_task_heavy = asyncio.create_task(empty_task())
-    pending_task_thumbnail = asyncio.create_task(empty_task())
-
-    if message.photo:
-        print('🖼 Photo: ')
-        context['type'] = 'photo'
-
-        photo = message.photo[-1]
-        context['file_size'] = photo.file_size
-        context['height'] = photo.height
-        context['width'] = photo.width
-
-        photo_file = await photo.get_file()
-        audio_store_path = post_file.parent / f'{message.message_id}-photo{pathlib.Path(photo_file.file_path).suffix}'
-        context['path'] = audio_store_path.as_posix()
-
-        pending_task_heavy = asyncio.create_task(photo_file.download_to_drive(audio_store_path))
-
-    if message.document:
-        print('🗂 Document: ')
-        context['type'] = 'document'
-
-        document = message.document
-
-        context['file_size'] = document.file_size
-        context['file_name'] = document.file_name
-
-        audio_store_path = post_file.parent / f'{message.message_id}-document{pathlib.Path(document.file_name).suffix}'
-        context['path'] = audio_store_path.as_posix()
-
-        audio_file = await document.get_file()
-
-        pending_task_heavy = asyncio.create_task(audio_file.download_to_drive(audio_store_path))
-
-        if document.thumbnail:
-            _c_thumb, pending_task_thumbnail = await make_thumbnail(
-                document.thumbnail, post_file.parent, message.message_id)
-
-            context['thumbnail_file_size'] = _c_thumb['file_size']
-            context['thumbnail_height'] = _c_thumb['height']
-            context['thumbnail_width'] = _c_thumb['width']
-            context['thumbnail_path'] =  _c_thumb['path']
-
-    if message.audio:
-        print('📣 Audio: ')
-
-        audio = message.audio
-        context['type'] = 'audio'
-        context['file_size'] = audio.file_size
-        context['file_name'] = audio.file_name
-        if hasattr(audio, 'title'):
-            context['title'] = audio.title
-        context['duration'] = audio.duration
-
-        audio_store_path = post_file.parent / f'{message.message_id}-audio{pathlib.Path(audio.file_name).suffix}'
-        context['path'] = audio_store_path.as_posix()
-
-        audio_file = await audio.get_file()
-
-        pending_task_heavy = asyncio.create_task(
-            audio_file.download_to_drive(audio_store_path))
-
-        if audio.thumbnail:
-            _c_thumb, pending_task_thumbnail = await make_thumbnail(audio.thumbnail, post_file.parent, message.message_id)
-
-            context['thumbnail_file_size'] = _c_thumb['file_size']
-            context['thumbnail_height'] = _c_thumb['height']
-            context['thumbnail_width'] = _c_thumb['width']
-            context['thumbnail_path'] =  _c_thumb['path']
-
-    if message.video:
-        print('📺 Video: ')
-
-        video = message.video
-        context['type'] = 'video'
-        context['file_size'] = video.file_size
-        context['file_name'] = video.file_name
-        if hasattr(video, 'title'):
-            context['title'] = video.title
-        context['height'] = video.height
-        context['height'] = video.width
-        context['duration'] = video.duration
-
-        video_store_path = post_file.parent / f'{message.message_id}-video{get_extension(video)}'
-        context['path'] = video_store_path.as_posix()
-
-        if video.thumbnail:
-            _c_thumb, pending_task_thumbnail = await make_thumbnail(
-                video.thumbnail, post_file.parent, message.message_id)
-
-            context['thumbnail_file_size'] = _c_thumb['file_size']
-            context['thumbnail_height'] = _c_thumb['height']
-            context['thumbnail_width'] = _c_thumb['width']
-            context['thumbnail_path'] =  _c_thumb['path']
-
-        print('File Size: ', video.file_size)
-        print(video.file_size.real)
-        print(video.file_size.imag)
-        print()
-
-        # todo make chunk download
+    context['type'] = 'text'
+    if hasattr(message, 'text'):
+        if message.text:
+            context['text'] = message.text_html
 
 
-        try:
-            video_file = await video.get_file()
+    print('📺 Media Type: ')
 
-            pending_task_heavy = asyncio.create_task(video_file.download_to_drive(video_store_path))
+    media_type: str = identify_media_type(message)
+    if media_type:
+        context['type'] = media_type
+        if hasattr(message, 'media_group_id'):
+            if getattr(message, 'media_group_id'):
+                context['media_group_id'] = getattr(message, 'media_group_id')
 
-        except Exception as e:
-            pass
+        media_obj = getattr(message, media_type)
 
-    if message.voice:
-        print('🎤 Voice: ')
+        attributes = [
+            'file_size',
+            'file_name',
+            'title',
+            'height',
+            'width',
+            'duration',
+        ]
+        for attr in attributes:
+            if hasattr(media_obj, attr):
+                context[attr] = getattr(media_obj, attr)
 
-        # todo
+        ext = get_extension(media_obj) if media_type != 'photo' else'.jpg'
+        print('EXT: ', ext)
 
-    # todo quote:
+        media_path = post_dir / f'{message.message_id}-{media_type}{ext}'
+        context['path'] = media_path.as_posix()
 
-    # location
+        if hasattr(message, 'caption'):
+            if message.caption:
+                context['caption'] = message.caption_html
 
-    with post_file.open('w') as f:
+        if hasattr(media_obj, 'thumbnail'):
+            thumb_cnt, pending_task_download_thumbnail = await make_thumbnail(
+                media_obj.thumbnail, post_dir, message.message_id)
+            context.update({key: thumb_cnt[key] for key in thumb_cnt})
+
+        pending_task_download_media_heavy = make_file_download(
+            media_type, media_obj, media_path)
+
+
+    with post_dir.joinpath(f'{message.message_id}.yaml').open('w') as f:
         yaml.dump(context, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
-    if pending_task_thumbnail:
+    if media_type:
         print('🛰 Task Thumbnail')
-        await pending_task_thumbnail
+        await asyncio.create_task(pending_task_download_thumbnail)
 
-    if pending_task_heavy:
         print('🛰 Task Heavy')
-        await pending_task_heavy
+        await asyncio.create_task(pending_task_download_media_heavy)
 
-
-
-
-
+    print('🛰 Task About Update')
+    await asyncio.create_task(task_about_update)
 
 
 
