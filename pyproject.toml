@@ -57,7 +57,7 @@ test = ["coverage"]
 "Source" = "https://github.com/andrewalevin"
 
 [project.scripts]
-telepostkeeper = "telepostkeeper:main"
+telepostkeeper = "telepostkeeper2ver:main"
 
 #ytb2audiobotrouter = "ytb2audiobot.ytb2audiobot_router:main"
 

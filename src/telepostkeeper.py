@@ -1,4 +1,5 @@
 import argparse
+import json
 import pathlib
 import pprint
 import sys
@@ -36,7 +37,7 @@ channels_list = [int(item) for item in os.getenv(ENV_NAME_CHANNELS, '').strip().
 bot = Bot(token=token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
-async def update_chat_index(sender, chat_dir: pathlib.Path):
+async def update_chat_about_info(sender, chat_dir: pathlib.Path):
     print('🦠 update_chat_index: ')
     full_name = sender.full_name
 
@@ -74,13 +75,15 @@ def get_real_chat_id(chat_id_raw):
 async def handler_channel_post(message: Message):
     print('💈 handler_channel_post')
     print('🔫 Post: ', message.message_id)
+    pprint.pprint(json.dumps(message, indent=4))
+    print()
 
     real_chat_id = get_real_chat_id(message.sender_chat.id)
     if real_chat_id not in channels_list:
         return
 
     chat_dir = store / f'chat-{real_chat_id}'
-    asyncio.create_task(update_chat_index(message.sender_chat, chat_dir))
+    asyncio.create_task(update_chat_about_info(message.sender_chat, chat_dir))
 
     now = datetime.now()
     post_file = chat_dir / f'{now.year}' / f'{now.month:02}' / f'{message.message_id}.yaml'
