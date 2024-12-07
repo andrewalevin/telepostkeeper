@@ -1,17 +1,18 @@
-import argparse
+
 import json
 import pathlib
 import pprint
 import sys
 from datetime import date, datetime
 import asyncio
-from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
-from aiogram.types import Message
+
+from aiogram.types import PhotoSize
 from dotenv import load_dotenv
 import os
 import yaml
+from telegram import Update, Video, Document, Audio, Message
+from telegram._files._basethumbedmedium import _BaseThumbedMedium
+from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
 ENV_NAME_BOT_TOKEN = 'TELEPOSTKEEPER_BOT_TOKEN'
 ENV_NAME_STORE = 'TELEPOSTKEEPER_STORE_DIR'
@@ -34,12 +35,9 @@ store.mkdir(parents=True, exist_ok=True)
 channels_list = [int(item) for item in os.getenv(ENV_NAME_CHANNELS, '').strip().split(',') if item.isdigit()]
 
 
-bot = Bot(token=token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-dp = Dispatcher()
 
-async def update_chat_about_info(sender, chat_dir: pathlib.Path):
-    print('🦠 update_chat_index: ')
-    full_name = sender.full_name
+async def update_chat_about_info(full_name: str, chat_dir: pathlib.Path):
+    print('🦠 update_chat_about: ')
 
     last_full_name = ''
     about_yaml = chat_dir / f'about.yaml'
@@ -70,12 +68,101 @@ async def update_chat_about_info(sender, chat_dir: pathlib.Path):
 def get_real_chat_id(chat_id_raw):
     return -chat_id_raw - 1000000000000
 
+async def empty_task():
+    pass
 
-@dp.channel_post()
-async def handler_channel_post(message: Message):
-    print('💈 handler_channel_post')
-    print('🔫 Post: ', message.message_id)
-    pprint.pprint(json.dumps(message, indent=4))
+async def make_thumbnail(thumbnail, root_path, post_id):
+    context = dict()
+
+    context['thumbnail_file_size'] = thumbnail.file_size
+    context['thumbnail_height'] = thumbnail.height
+    context['thumbnail_width'] = thumbnail.width
+
+    thumb_file = await thumbnail.get_file()
+    thumb_path = pathlib.Path(thumb_file.file_path)
+    thumb_store_path = root_path / f'{post_id}-thumbnail{thumb_path.suffix}'
+
+    context['thumbnail_path'] = thumb_store_path.as_posix()
+
+    try:
+        task_created = thumb_file.download_to_drive(thumb_store_path)
+    except Exception as e:
+        print('Exception in Thumb')
+        task_created = empty_task()
+
+    return context, task_created
+
+
+def get_extension(media_obj: Video | Audio | Document | PhotoSize) -> str:
+    ext = '.file'
+
+    print('🔬 Extension')
+    pprint.pprint(media_obj)
+    print()
+    print('media_obj.mime_type: ', media_obj.mime_type)
+    print()
+
+    if hasattr(media_obj, 'file_name'):
+        if media_obj.file_name:
+            try:
+                ext = pathlib.Path(media_obj.file_name).suffix
+            except Exception as e:
+                print(f'🎸 Errro {e}')
+
+    if ext != '.file':
+        return ext
+
+    if hasattr(media_obj, 'mime_type'):
+        print('media_obj.mime_type: ', media_obj.mime_type)
+        if media_obj.mime_type:
+            try:
+                ext = media_obj.mime_type.split('/')[-1]
+                ext = f'.{ext}'
+            except Exception as e:
+                print(f'🎸 Errro {e}')
+
+    return ext
+
+
+async def make_file_download(media_obj_type: str, media_obj: any, file_path: pathlib.Path):
+    print('Download: ')
+    pprint.pprint(media_obj)
+    print()
+
+    if media_obj_type == 'photo':
+        media_obj = media_obj[-1]
+        print('Photo ')
+        pprint.pprint(media_obj)
+
+    if not hasattr(media_obj, 'get_file'):
+        return
+
+    try:
+        _file = await media_obj.get_file()
+        await _file.download_to_drive(file_path)
+    except Exception as e:
+        print(f'🍎 Error Doanloading: \t {e}')
+
+    # todo make chunk download
+
+
+def identify_media_type(message: Message):
+    media_types = ['photo', 'document', 'audio', 'video', 'voice']
+    for media_type in media_types:
+        if hasattr(message, media_type):
+            if getattr(message, media_type):
+                return media_type
+    return ''
+
+
+async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.channel_post:
+        return
+
+    message = update.channel_post
+
+    print('🍎 update_id: ', update.update_id)
+    print('🍎', yaml.dump(message, default_flow_style=False))
     print()
 
     real_chat_id = get_real_chat_id(message.sender_chat.id)
@@ -83,58 +170,92 @@ async def handler_channel_post(message: Message):
         return
 
     chat_dir = store / f'chat-{real_chat_id}'
-    asyncio.create_task(update_chat_about_info(message.sender_chat, chat_dir))
+    task_about_update = update_chat_about_info(message.sender_chat.full_name, chat_dir)
 
     now = datetime.now()
-    post_file = chat_dir / f'{now.year}' / f'{now.month:02}' / f'{message.message_id}.yaml'
-    post_file.parent.mkdir(exist_ok=True, parents=True)
+    post_dir = chat_dir / f'{now.year}' / f'{now.month:02}'
+    post_dir.mkdir(exist_ok=True, parents=True)
+
+    pending_task_download_thumbnail = empty_task()
+    pending_task_download_media_heavy = empty_task()
 
     context = dict()
 
     context['date'] = message.date
-    context['type'] = ''
-    context['media_group_id'] = ''
+    context['type'] = 'text'
+    if hasattr(message, 'text'):
+        if message.text:
+            context['text'] = message.text_html
 
-    if message.media_group_id:
-        context['media_group_id'] = message.media_group_id
 
-    if message.text:
-        context['text'] = message.html_text
-        context['type'] = 'text'
+    print('📺 Media Type: ')
 
-    if message.photo:
-        print('🖼 Photo: ')
+    media_type: str = identify_media_type(message)
+    if media_type:
+        context['type'] = media_type
+        if hasattr(message, 'media_group_id'):
+            if getattr(message, 'media_group_id'):
+                context['media_group_id'] = getattr(message, 'media_group_id')
 
-        photo_maxi_size = message.photo[-1]
-        photo_file = await bot.get_file(photo_maxi_size.file_id)
+        media_obj = getattr(message, media_type)
 
-        print('file_unique_id: ', photo_file.file_unique_id)
+        attributes = [
+            'file_size',
+            'file_name',
+            'title',
+            'height',
+            'width',
+            'duration',
+        ]
+        for attr in attributes:
+            if hasattr(media_obj, attr):
+                context[attr] = getattr(media_obj, attr)
 
-        photo_file_path = pathlib.Path(photo_file.file_path)
-        ext = photo_file_path.suffix
+        ext = get_extension(media_obj) if media_type != 'photo' else'.jpg'
+        print('EXT: ', ext)
 
-        photo_store_file = post_file.parent / f'{message.message_id}-photo{ext}'
-
-        await bot.download_file(photo_file.file_path, photo_store_file)
-
-        context['type'] = 'photo'
-        context['photo'] = photo_store_file.name
+        media_path = post_dir / f'{message.message_id}-{media_type}{ext}'
+        context['path'] = media_path.as_posix()
 
         if hasattr(message, 'caption'):
-            context['text'] = message.html_text
+            if message.caption:
+                context['caption'] = message.caption_html
+
+        if hasattr(media_obj, 'thumbnail'):
+            thumb_cnt, pending_task_download_thumbnail = await make_thumbnail(
+                media_obj.thumbnail, post_dir, message.message_id)
+            context.update({key: thumb_cnt[key] for key in thumb_cnt})
+
+        pending_task_download_media_heavy = make_file_download(
+            media_type, media_obj, media_path)
 
 
-    with post_file.open('w') as f:
+    with post_dir.joinpath(f'{message.message_id}.yaml').open('w') as f:
         yaml.dump(context, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
+    if media_type:
+        print('🛰 Task Thumbnail')
+        await asyncio.create_task(pending_task_download_thumbnail)
 
-async def run_bot():
+        print('🛰 Task Heavy')
+        await asyncio.create_task(pending_task_download_media_heavy)
+
+    print('🛰 Task About Update')
+    await asyncio.create_task(task_about_update)
+
+
+
+def run_bot():
     print('Bot is running ... ')
-    await dp.start_polling(bot, handle_signals=True, close_bot_session=True)
+    application = ApplicationBuilder().token(token).build()
+
+    application.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handler_channel_post))
+
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
 def main():
-    asyncio.run(run_bot())
+    run_bot()
 
 
 if __name__ == '__main__':
