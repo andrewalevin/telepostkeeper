@@ -6,6 +6,7 @@ from datetime import datetime
 import asyncio
 from typing import Optional
 
+import aiohttp
 from dotenv import load_dotenv
 import os
 import yaml
@@ -29,8 +30,36 @@ if not store or store == ".":
 else:
     store = pathlib.Path(store.strip())
 store.mkdir(parents=True, exist_ok=True)
+print('🏈️ store: ', store)
 
 channels_list = [int(item) for item in os.getenv(ENV_NAME_CHANNELS, '').strip().split(',') if item.isdigit()]
+print('🏈️ channels_list: ', channels_list)
+
+skip_download_media_types = []
+
+MEDIA_TYPES_ALL = ['text', 'photo', 'document', 'audio', 'video', 'voice', 'location', 'sticker']
+
+for media_type in MEDIA_TYPES_ALL:
+    value = os.getenv(f'TELEPOSTKEEPER_SKIP_DOWNLOAD_{media_type.upper()}', '').lower()
+    if value == 'true':
+        skip_download_media_types.append(media_type)
+print('🏈️ skip_download_media_types: ', skip_download_media_types)
+
+skip_download_bigger = 987654321
+if env_max_file_size := os.getenv(f'TELEPOSTKEEPER_SKIP_DOWNLOAD_BIGGER', ''):
+    if env_max_file_size.isdigit():
+        skip_download_bigger = max(10, min(int(env_max_file_size), skip_download_bigger))
+print('🏈️ skip_download_bigger: ', skip_download_bigger)
+
+skip_download_thumbnail = False
+if env_skip_down_thumb := os.getenv(f'TELEPOSTKEEPER_SKIP_DOWNLOAD_THUMBNAIL', '').lower():
+    if env_skip_down_thumb == 'true':
+        skip_download_thumbnail = True
+print('🏈️ skip_download_thumbnail: ', skip_download_thumbnail)
+
+# todo Refactor
+
+
 
 
 async def update_chat_about_info(chat: Chat, chat_dir: pathlib.Path):
@@ -105,19 +134,39 @@ async def get_extension_media_heavy_object(media_type: str, media_obj: Video | A
     return ''
 
 
+async def download_by_chunks_large(url: str, destination):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            with open(destination, 'wb') as f:
+                # Download in chunks (e.g., 1MB per chunk)
+                while True:
+                    chunk = await response.content.read(64 * 1024)  # 1MB chunks
+                    if not chunk:
+                        break
+                    f.write(chunk)
+
+
 async def make_file_download(media_obj: any, path_media_obj: pathlib.Path):
     try:
         _file = await media_obj.get_file()
-        await _file.download_to_drive(path_media_obj)
     except Exception as e:
-        print(f"Error downloading file to {path_media_obj}: {e}")
+        print(f"1-Error downloading file to {path_media_obj}: {e}")
         return
 
+    if _file.file_size < 12000:
+        try:
+            await _file.download_to_drive(path_media_obj)
+        except Exception as e:
+            print(f"2-Error downloading file to {path_media_obj}: {e}")
+            return
+    else:
+        try:
+            await download_by_chunks_large(_file.file_path, path_media_obj)
+        except Exception as e:
+            print(f"3-Error downloading file to {path_media_obj}: {e}")
+            return
+
     return path_media_obj
-
-    # todo make chunk download
-
-MEDIA_TYPES_ALL = ['text', 'photo', 'document', 'audio', 'video', 'voice', 'location', 'sticker']
 
 def identify_media_type(message: Message) -> Optional[str]:
     for media_type in MEDIA_TYPES_ALL:
@@ -185,24 +234,33 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
                 context[attr] = getattr(media_obj, attr)
 
         if hasattr(media_obj, 'thumbnail'):
-            try:
-                thumb_file = await media_obj.thumbnail.get_file()
-                thumb_path = post_dir / f'{message.message_id}-thumbnail{pathlib.Path(thumb_file.file_path).suffix}'
+            if skip_download_thumbnail:
+                context['thumbnail'] = 'skip'
+            else:
+                try:
+                    thumb_file = await media_obj.thumbnail.get_file()
+                    thumb_path = post_dir / f'{message.message_id}-thumbnail{pathlib.Path(thumb_file.file_path).suffix}'
 
-                pending_task_download_thumbnail = thumb_file.download_to_drive(thumb_path)
+                    pending_task_download_thumbnail = thumb_file.download_to_drive(thumb_path)
 
-                context['thumbnail_file_size'] = media_obj.thumbnail.file_size
-                context['thumbnail_height'] = media_obj.thumbnail.height
-                context['thumbnail_width'] = media_obj.thumbnail.width
-                context['thumbnail_path'] = thumb_path.as_posix()
-            except Exception as e:
-                print('Error', e)
+                    context['thumbnail_file_size'] = media_obj.thumbnail.file_size
+                    context['thumbnail_height'] = media_obj.thumbnail.height
+                    context['thumbnail_width'] = media_obj.thumbnail.width
+                    context['thumbnail_path'] = thumb_path.as_posix()
+                except Exception as e:
+                    print('Error', e)
 
         if ext := await get_extension_media_heavy_object(media_type, media_obj):
             media_path = post_dir / f'{message.message_id}-{media_type}{ext}'
             context['path'] = media_path.as_posix()
-
-            pending_task_download_media_heavy = make_file_download(media_obj, media_path)
+            if media_obj.file_size > skip_download_bigger:
+                print('Skipped Max File size')
+                context['skip_download'] = f'max_file_size-{skip_download_bigger}'
+            elif media_type in skip_download_media_types:
+                print('Skipped Type')
+                context['skip_download'] = f'file_type'
+            else:
+                pending_task_download_media_heavy = make_file_download(media_obj, media_path)
 
     if message.forward_origin:
         print()
@@ -238,7 +296,6 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
 
             if hasattr(sender, 'last_name') and sender.last_name:
                 context['forward_chat_last_name'] = sender.last_name
-
 
     with post_dir.joinpath(f'{message.message_id}.yaml').open('w') as f:
         yaml.dump(context, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
