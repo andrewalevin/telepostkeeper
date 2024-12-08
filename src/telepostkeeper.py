@@ -16,6 +16,8 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 ENV_NAME_BOT_TOKEN = 'TELEPOSTKEEPER_BOT_TOKEN'
 ENV_NAME_STORE = 'TELEPOSTKEEPER_STORE_DIR'
 ENV_NAME_CHANNELS = 'TELEPOSTKEEPER_CHANNELS_IDS_LIST'
+ENV_NAME_CHANNELS_ENCRYPTED = 'TELEPOSTKEEPER_CHANNELS_IDS_LIST_ENCRYPTED'
+ENV_NAME_ENCRYPTION_PRIVATE_KEY = 'TELEPOSTKEEPER_ENCRYPTION_PRIVATE_KEY'
 
 load_dotenv()
 
@@ -34,6 +36,15 @@ print('🏈️ store: ', store)
 
 channels_list = [int(item) for item in os.getenv(ENV_NAME_CHANNELS, '').strip().split(',') if item.isdigit()]
 print('🏈️ channels_list: ', channels_list)
+
+channels_list_encrypted = [int(item) for item in os.getenv(ENV_NAME_CHANNELS_ENCRYPTED, '').strip().split(',') if item.isdigit()]
+print('🏈️ channels_list_encrypted: ', channels_list_encrypted)
+
+encryption_private_key = ''
+if private_key := os.getenv(ENV_NAME_ENCRYPTION_PRIVATE_KEY, '').strip():
+    encryption_private_key = private_key
+print('🏈️ encryption_private_key: ', encryption_private_key)
+
 
 skip_download_media_types = []
 
