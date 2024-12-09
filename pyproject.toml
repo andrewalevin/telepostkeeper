@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior 
 
 [project]
 name = "telepostkeeper"
-version = "0.1"
+version = "0.1.1"
 
 description = "🦜 telepostkeeper"
 readme = "README.md"
