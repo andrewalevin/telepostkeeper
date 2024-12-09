@@ -13,8 +13,8 @@ import os
 from telegram import Update, Video, Document, Audio, Message, Chat, PhotoSize
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
-from encryption import encrypt_aes, encrypt_aes_file
-from utils import read_yaml, write_yaml, get_md5
+from telepostkeeper.encryption import encrypt_aes, encrypt_aes_file
+from telepostkeeper.utils import read_yaml, write_yaml, get_md5
 
 ENV_NAME_BOT_TOKEN = 'TPK_BOT_TOKEN'
 ENV_NAME_STORE = 'TPK_STORE_DIR'
@@ -31,7 +31,7 @@ if not token:
 
 store = os.getenv(ENV_NAME_STORE)
 if not store or store == ".":
-    store = pathlib.Path(".")
+    store = pathlib.Path("..")
 else:
     store = pathlib.Path(store.strip())
 store.mkdir(parents=True, exist_ok=True)

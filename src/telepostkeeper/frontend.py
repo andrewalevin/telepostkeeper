@@ -4,7 +4,7 @@ import pathlib
 from datetime import datetime
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
-from utils import read_yaml
+from telepostkeeper.utils import read_yaml
 
 load_dotenv()
 
@@ -12,7 +12,7 @@ ENV_NAME_STORE = 'TPK_STORE_DIR'
 
 store = os.getenv(ENV_NAME_STORE)
 if not store or store == ".":
-    store = pathlib.Path(".")
+    store = pathlib.Path("..")
 else:
     store = pathlib.Path(store.strip())
 store.mkdir(parents=True, exist_ok=True)

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior 
 
 [project]
 name = "telepostkeeper"
-version = "0.1.2"
+version = "0.1.3"
 
 description = "🦜 telepostkeeper"
 readme = "README.md"
@@ -60,9 +60,9 @@ test = ["coverage"]
 "Source" = "https://github.com/andrewalevin"
 
 [project.scripts]
-telepostkeeper = "telepostkeeper:main"
-telepostkeeper-timekiller = "timekiller:main"
-telepostkeeper-frontend = "frontend:main"
+telepostkeeper = "telepostkeeper.telepostkeeper:main"
+telepostkeeper-timekiller = "telepostkeeper.timekiller:main"
+telepostkeeper-frontend = "telepostkeeper.frontend:main"
 
 #ytb2audiobotrouter = "ytb2audiobot.ytb2audiobot_router:main"
 
