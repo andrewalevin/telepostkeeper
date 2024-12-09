@@ -2,6 +2,6 @@
 
 pip install -e . --no-deps
 
-#telepostkeeper-timekiller 30
+telepostkeeper-timekiller 10
 
-telepostkeeper-frontend
+#telepostkeeper-frontend
