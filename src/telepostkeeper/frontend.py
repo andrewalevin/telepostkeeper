@@ -2,8 +2,12 @@ import asyncio
 import os
 import pathlib
 from datetime import datetime
+from importlib.resources import files
+
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
+from pip._internal.metadata import pkg_resources
+
 from telepostkeeper.utils import read_yaml
 
 load_dotenv()
@@ -18,7 +22,13 @@ else:
 store.mkdir(parents=True, exist_ok=True)
 print('🏈️ store: ', store)
 
+template_dir = files('telepostkeeper.templates')
+print('template_dir: ', template_dir)
+print('type: ', type(template_dir))
 
+template_env = Environment(loader=FileSystemLoader(template_dir))
+
+print('template_dir ITER: ', pathlib.Path(template_dir).iterdir())
 
 async def make_index_post(post: pathlib.Path, about: dict) -> dict:
     print('🔹 Post: ', post)
@@ -50,8 +60,6 @@ async def make_index_post(post: pathlib.Path, about: dict) -> dict:
                 if path.suffix != '.aes':
                     context['photo'] = path.name
 
-
-
     return context
 
 
@@ -72,8 +80,7 @@ async def make_index_chat_month(month: pathlib.Path, about: dict):
     title = f'{month_full_name} {month.parent.name}'
     description = month.parent.parent.name
 
-    template = Environment(loader=FileSystemLoader("templates")).get_template("month.html")
-    html_data = template.render({
+    html_data = template_env.get_template("month.html").render({
         'title': title,
         'description': description,
         'posts': posts_cnt})
@@ -97,8 +104,7 @@ async def make_index_chat(chat: pathlib.Path, about: dict):
                 'folder': month,})
         years_context.append({'title': year.name, 'months': months_context})
 
-    template = Environment(loader=FileSystemLoader("templates")).get_template("chat.html")
-    html_data = template.render({'title': f'{chat.name}', 'years': years_context})
+    html_data = template_env.get_template("chat.html").render({'title': f'{chat.name}', 'years': years_context})
 
     with chat.joinpath('index.html').open('w') as f:
         f.write(html_data)
@@ -130,8 +136,7 @@ async def make_index_store():
 
         chats_all_context.append(context)
 
-    template = Environment(loader=FileSystemLoader("templates")).get_template("store.html")
-    html_data = template.render({'title': f'Index of chats', 'chats': chats_all_context})
+    html_data = template_env.get_template("store.html").render({'title': f'Index of chats', 'chats': chats_all_context})
 
     with store.joinpath('index.html').open('w') as f:
         f.write(html_data)

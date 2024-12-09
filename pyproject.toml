@@ -1,76 +1,32 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior can happen.
 
-[project]
+[tool.poetry]
 name = "telepostkeeper"
-version = "0.1.5"
-
-description = "🦜 telepostkeeper"
+version = "0.1.6"
+description = "telepostkeeper"
+authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
-
-requires-python = ">=3.8"
-
-license = {file = "LICENSE.txt"}
-
-keywords = ['telepostkeeper']
-
-authors = [
-  {name = "Andrew Levin", email = "author@example.com" }
-]
-
-maintainers = [
-  {name = "A. Great Maintainer", email = "maintainer@example.com" }
-]
-
-classifiers = [
-  "Development Status :: 3 - Alpha",
-
-  "Intended Audience :: Developers",
-  "Topic :: Software Development :: Build Tools",
-
-  "License :: OSI Approved :: MIT License",
-
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3 :: Only",
-]
-
-dependencies = [
-  'python-telegram-bot',
-  'Jinja2',
-  'pycryptodome',
-  'python-dotenv',
-  'pyyaml',
+packages = [
+    { include = "telepostkeeper", from = "src" }
 ]
 
 
-[project.optional-dependencies]
-dev = ["check-manifest"]
-test = ["coverage"]
+[tool.poetry.dependencies]
+python = ">=3.9"
+jinja2 = ">=3.1.2"
+python-telegram-bot = ">=20.3"  # Replace with the latest version if necessary
+pycryptodome = ">=3.18.0"       # Replace with the latest version if necessary
+python-dotenv = ">=1.0.0"       # Replace with the latest version if necessary
+pyyaml = ">=6.0.1"
 
-[project.urls]
-"Homepage" = "https://github.com/andrewalevin"
-"Bug Reports" = "https://github.com/andrewalevin"
-"Funding" = "https://donate.pypi.org"
-"Say Thanks!" = "https://github.com/andrewalevin"
-"Source" = "https://github.com/andrewalevin"
 
-[project.scripts]
+[tool.poetry.scripts]
 telepostkeeper = "telepostkeeper.telepostkeeper:main"
 telepostkeeper-timekiller = "telepostkeeper.timekiller:main"
 telepostkeeper-frontend = "telepostkeeper.frontend:main"
 
-#ytb2audiobotrouter = "ytb2audiobot.ytb2audiobot_router:main"
 
-[tool.setuptools]
-package-data = {"sample" = ["*.dat"]}
-
-[tool.setuptools.packages.find]
-where = ["src"]
+[build-system]
+requires = ["poetry>=1.1.0"]
+build-backend = "poetry.core.masonry.api"
 
 
