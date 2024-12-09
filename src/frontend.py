@@ -35,10 +35,14 @@ async def make_index_chat_month(month: pathlib.Path, about: dict):
         posts_cnt.append({'title':f'Post {post.stem}'})
 
     month_full_name = datetime.strptime(month.name, "%m").strftime("%B")
-    title = f'{month.parent.name} {month_full_name} for {month.parent.parent.name}'
+    title = f'{month_full_name} {month.parent.name}'
+    description = month.parent.parent.name
 
     template = Environment(loader=FileSystemLoader("templates")).get_template("month.html")
-    html_data = template.render({'title': title, 'posts': posts_cnt})
+    html_data = template.render({
+        'title': title,
+        'description': description,
+        'posts': posts_cnt})
 
     with month.joinpath('index.html').open('w') as f:
         f.write(html_data)
