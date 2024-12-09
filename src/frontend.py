@@ -1,19 +1,14 @@
 import asyncio
-import calendar
 import os
 import pathlib
-import pprint
 from datetime import datetime
-
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
-
 from utils import read_yaml
 
 load_dotenv()
 
-
-ENV_NAME_STORE = 'TELEPOSTKEEPER_STORE_DIR'
+ENV_NAME_STORE = 'TPK_STORE_DIR'
 
 store = os.getenv(ENV_NAME_STORE)
 if not store or store == ".":
@@ -24,17 +19,56 @@ store.mkdir(parents=True, exist_ok=True)
 print('🏈️ store: ', store)
 
 
+
+async def make_index_post(post: pathlib.Path, about: dict) -> dict:
+    print('🔹 Post: ', post)
+
+    data = await read_yaml(post)
+
+    if not data:
+        return {}
+
+    context = dict()
+    context['title'] = f'Post {post.stem}'
+
+    if data.get('text'):
+        context['text'] = data.get('text')
+
+    if data.get('caption'):
+        context['text'] = data.get('caption')
+
+    if thumbnail_path := data.get('thumbnail_path'):
+        thumbnail_path = pathlib.Path(thumbnail_path)
+        if thumbnail_path.exists():
+            if thumbnail_path.suffix != '.aes':
+                context['photo'] = thumbnail_path.name
+
+    if data.get('type') == 'photo':
+        if path := data.get('path'):
+            path = pathlib.Path(path)
+            if path.exists():
+                if path.suffix != '.aes':
+                    context['photo'] = path.name
+
+
+
+    return context
+
+
+
 async def make_index_chat_month(month: pathlib.Path, about: dict):
-    print('💚 Month: ', month)
-    print()
+    print('🔶 Month: ', month)
 
     posts = sorted(list(filter(lambda file: file.is_file() and file.suffix == '.yaml', month.iterdir())), reverse=True)
     posts_cnt = []
     for post in posts:
-        print('POST')
-        posts_cnt.append({'title':f'Post {post.stem}'})
+        post_cnt = await make_index_post(post, about)
+        if not post_cnt:
+            continue
+        posts_cnt.append(post_cnt)
 
     month_full_name = datetime.strptime(month.name, "%m").strftime("%B")
+
     title = f'{month_full_name} {month.parent.name}'
     description = month.parent.parent.name
 
@@ -49,7 +83,7 @@ async def make_index_chat_month(month: pathlib.Path, about: dict):
 
 
 async def make_index_chat(chat: pathlib.Path, about: dict):
-    print('💙 Chat: ', chat)
+    print('🟢 Chat: ', chat)
 
     years = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), chat.iterdir())), reverse=True)
     years_context = []
@@ -57,17 +91,11 @@ async def make_index_chat(chat: pathlib.Path, about: dict):
         months = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), year.iterdir())), reverse=True)
         months_context = []
         for month in months:
-            month_full_name = datetime.strptime(month.name, "%m").strftime("%B")
-            months_context.append({
-                'title': month_full_name,
-                'folder': month,
-            })
-
             await make_index_chat_month(month, about)
 
-        years_context.append({
-            'title': year.name,
-            'months': months_context})
+            months_context.append({'title': datetime.strptime(month.name, "%m").strftime("%B"),
+                'folder': month,})
+        years_context.append({'title': year.name, 'months': months_context})
 
     template = Environment(loader=FileSystemLoader("templates")).get_template("chat.html")
     html_data = template.render({'title': f'{chat.name}', 'years': years_context})
