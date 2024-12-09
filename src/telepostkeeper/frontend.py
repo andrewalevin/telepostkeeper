@@ -2,11 +2,9 @@ import asyncio
 import os
 import pathlib
 from datetime import datetime
-from importlib.resources import files
 
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
-from pip._internal.metadata import pkg_resources
 
 from telepostkeeper.utils import read_yaml
 
@@ -22,13 +20,17 @@ else:
 store.mkdir(parents=True, exist_ok=True)
 print('🏈️ store: ', store)
 
-template_dir = files('telepostkeeper.templates')
-print('template_dir: ', template_dir)
-print('type: ', type(template_dir))
+current_dir = os.path.dirname(__file__)
+templates_dir = os.path.join(current_dir, "templates")
 
-template_env = Environment(loader=FileSystemLoader(template_dir))
+print('template_dir: ', templates_dir)
+print('type: ', type(templates_dir))
 
-print('template_dir ITER: ', pathlib.Path(template_dir).iterdir())
+print('template_dir ITER: ', pathlib.Path(templates_dir).iterdir())
+
+
+template_env = Environment(loader=FileSystemLoader(templates_dir))
+
 
 async def make_index_post(post: pathlib.Path, about: dict) -> dict:
     print('🔹 Post: ', post)
