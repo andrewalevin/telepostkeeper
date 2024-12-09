@@ -127,15 +127,8 @@ async def update_chat_about_info(chat: Chat, chat_dir: pathlib.Path, encryption_
     if last_title == chat.title:
         return
 
-    context = dict()
-    if hasattr(chat, 'id'):
-        context['id'] = chat.id
-
-    if hasattr(chat, 'title'):
-        context['title'] = chat.title
-
-    if hasattr(chat, 'full_name'):
-        context['full_name'] = chat.full_name
+    attributes = ['id', 'title', 'full_name', 'username', 'last_name', 'first_name']
+    context = {attr: getattr(chat, attr) for attr in attributes if hasattr(chat, attr)}
 
     if encryption_enabled:
         print('🔐 ENCRYPT - 3 ')

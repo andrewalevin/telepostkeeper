@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block topbar %}
+    <div class="d-flex flex-row">
+        <div class="col">
+            <h3>{{ title }}</h3>
+            <p class="text-body-secondary fw-normal mb-0">chat-id</p>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="col-md-8 mx-auto">
+        {% for post in posts %}
+            <div class="card rounded-3 shadow-sm mb-4">
+                {% if post.photo %}
+                    <img class="card-img-top" src="{{ post.photo }}">
+                {% endif %}
+
+                <div class="card-body">
+                    <h4>{{ post.title }}</h4>
+                    <p>{{ post.date }}</p>
+                    {% if post.text %}
+                        <p>{{ post.text }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

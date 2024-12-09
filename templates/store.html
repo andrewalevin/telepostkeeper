@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block topbar %}
+    <h3>{{ title }}</h3>
+{% endblock %}
+
+{% block content %}
+    <ul>
+        {% for chat in chats %}
+            <li>
+                <div class="mb-4">
+                    <p>
+                        <a href="{{ chat.folder }}" class="text-decoration-none">
+                            <h4 class="mb-1 fw-normal">
+                                {{ chat.title }}
+                            </h4>
+                        </a>
+                    </p>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
