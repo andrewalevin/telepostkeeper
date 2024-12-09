@@ -58,6 +58,7 @@ test = ["coverage"]
 
 [project.scripts]
 telepostkeeper = "telepostkeeper:main"
+telepostkeeper-timekiller = "timekiller:main"
 telepostkeeper-frontend = "frontend:main"
 
 #ytb2audiobotrouter = "ytb2audiobot.ytb2audiobot_router:main"
