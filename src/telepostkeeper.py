@@ -434,7 +434,9 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
     if encryption_enabled:
         print('🔐 ENCRYPT - context')
         for key in context:
-            if key in ['path', 'thumbnail_path']:
+            if key in ['type']:
+                continue
+            elif key in ['path', 'thumbnail_path']:
                 if context.get(key):
                     context[key] += '.aes'
             else:
