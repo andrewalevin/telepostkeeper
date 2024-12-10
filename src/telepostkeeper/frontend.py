@@ -66,7 +66,7 @@ async def make_index_post(post: pathlib.Path, about: dict) -> dict:
 
 
 
-async def make_index_chat_month(month: pathlib.Path, about: dict):
+async def make_index_month(month: pathlib.Path, about: dict):
     print('🔶 Month: ', month)
 
     posts = sorted(list(filter(lambda file: file.is_file() and file.suffix == '.yaml', month.iterdir())), reverse=True)
@@ -91,16 +91,34 @@ async def make_index_chat_month(month: pathlib.Path, about: dict):
         f.write(html_data)
 
 
+async def make_index_year(year: pathlib.Path, about: dict):
+    print('🔹 Year: ', year)
+
+    months = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), year.iterdir())), reverse=True)
+    months_context = []
+    for month in months:
+        await make_index_month(month, about)
+
+        months_context.append({'title': datetime.strptime(month.name, "%m").strftime("%B"), 'folder': month,})
+
+    html_data = template_env.get_template("year.html").render({'title': f'{year.name}', 'months': months_context})
+
+    with year.joinpath('index.html').open('w') as f:
+        f.write(html_data)
+
+
 async def make_index_chat(chat: pathlib.Path, about: dict):
     print('🟢 Chat: ', chat)
 
     years = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), chat.iterdir())), reverse=True)
     years_context = []
     for year in years:
+        await make_index_year(year, about)
+
         months = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), year.iterdir())), reverse=True)
         months_context = []
         for month in months:
-            await make_index_chat_month(month, about)
+            await make_index_month(month, about)
 
             months_context.append({'title': datetime.strptime(month.name, "%m").strftime("%B"),
                 'folder': month,})

@@ -27,7 +27,6 @@ ENV_NAME_BOT_TOKEN = 'TPK_BOT_TOKEN'
 ENV_NAME_STORE = 'TPK_STORE_DIR'
 ENV_NAME_CHANNELS = 'TPK_CHANNELS_IDS_LIST'
 ENV_NAME_CHANNELS_ENCRYPTED = 'TPK_CHANNELS_IDS_LIST_ENCRYPTED'
-ENV_NAME_ENCRYPTION_PRIVATE_KEY = 'TPK_ENCRYPTION_PRIVATE_KEY'
 
 load_dotenv()
 
@@ -49,12 +48,6 @@ logger.info(f'🏈️ channels_list: {channels_list}')
 
 channels_list_encrypted = [int(item) for item in os.getenv(ENV_NAME_CHANNELS_ENCRYPTED, '').strip().split(',') if item.isdigit()]
 logger.info(f'🏈️ channels_list_encrypted: {channels_list_encrypted}')
-
-encryption_private_key = ''
-if private_key := os.getenv(ENV_NAME_ENCRYPTION_PRIVATE_KEY, '').strip():
-    encryption_private_key = private_key
-logger.info(f'🏈️ encryption_private_key: {encryption_private_key[:4]}')
-
 
 skip_download_media_types = []
 
