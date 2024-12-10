@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "telepostkeeper"
-version = "0.1.14"
+version = "0.1.16"
 description = "telepostkeeper"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"

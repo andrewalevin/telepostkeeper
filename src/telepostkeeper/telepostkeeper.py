@@ -1,6 +1,5 @@
 import logging
 import pathlib
-import plogger.info
 import signal
 import sys
 from datetime import datetime
@@ -43,18 +42,18 @@ if not store or store == ".":
 else:
     store = pathlib.Path(store.strip())
 store.mkdir(parents=True, exist_ok=True)
-logger.info('🏈️ store: ', store)
+logger.info(f'🏈️ store: {store}')
 
 channels_list = [int(item) for item in os.getenv(ENV_NAME_CHANNELS, '').strip().split(',') if item.isdigit()]
-logger.info('🏈️ channels_list: ', channels_list)
+logger.info(f'🏈️ channels_list: {channels_list}')
 
 channels_list_encrypted = [int(item) for item in os.getenv(ENV_NAME_CHANNELS_ENCRYPTED, '').strip().split(',') if item.isdigit()]
-logger.info('🏈️ channels_list_encrypted: ', channels_list_encrypted)
+logger.info(f'🏈️ channels_list_encrypted: {channels_list_encrypted}')
 
 encryption_private_key = ''
 if private_key := os.getenv(ENV_NAME_ENCRYPTION_PRIVATE_KEY, '').strip():
     encryption_private_key = private_key
-logger.info('🏈️ encryption_private_key: ', encryption_private_key[:4], '...')
+logger.info(f'🏈️ encryption_private_key: {encryption_private_key[:4]}')
 
 
 skip_download_media_types = []
@@ -65,19 +64,19 @@ for _media_type in MEDIA_TYPES_ALL:
     value = os.getenv(f'TPK_SKIP_DOWNLOAD_{_media_type.upper()}', '').lower()
     if value == 'true':
         skip_download_media_types.append(_media_type)
-logger.info('🏈️ skip_download_media_types: ', skip_download_media_types)
+logger.info(f'🏈️ skip_download_media_types: {skip_download_media_types}')
 
 skip_download_bigger = 987654321
 if env_max_file_size := os.getenv(f'TPK_SKIP_DOWNLOAD_BIGGER', ''):
     if env_max_file_size.isdigit():
         skip_download_bigger = max(10, min(int(env_max_file_size), skip_download_bigger))
-logger.info('🏈️ skip_download_bigger: ', skip_download_bigger)
+logger.info(f'🏈️ skip_download_bigger: {skip_download_bigger}')
 
 skip_download_thumbnail = False
 if env_skip_down_thumb := os.getenv(f'TPK_SKIP_DOWNLOAD_THUMBNAIL', '').lower():
     if env_skip_down_thumb == 'true':
         skip_download_thumbnail = True
-logger.info('🏈️ skip_download_thumbnail: ', skip_download_thumbnail)
+logger.info(f'🏈️ skip_download_thumbnail: {skip_download_thumbnail}')
 
 
 encrypt_aes_key_base64 = ''
@@ -178,7 +177,7 @@ async def make_file_download(media_obj: any, file_size: int, path_media_obj: pat
     try:
         _file = await media_obj.get_file()
     except Exception as e:
-        logger.info('🔴 Error. Cant get_file: ', path_media_obj, media_obj, 'file_size:', file_size, 'error:', e)
+        logger.info(f'🔴 Error. Cant get_file: {path_media_obj} {media_obj} file_size: {file_size} error: {e}')
         return
 
     try:
@@ -204,7 +203,7 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
 
     message = update.channel_post
 
-    logger.info('🍋 Process message id: ', message.message_id)
+    logger.info(f'🍋 Process message id: {message.message_id}')
     #logger.info('🍎', yaml.dump(message, default_flow_style=False))
     #logger.info()
 
@@ -283,7 +282,7 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
                     context['thumbnail_width'] = media_obj.thumbnail.width
                     context['thumbnail_path'] = thumb_path.as_posix()
                 except Exception as e:
-                    logger.info('Error', e)
+                    logger.info(f'Error: {e}')
 
         if ext := await get_extension_media_heavy_object(media_type, media_obj):
             media_path = post_dir / f'{message.message_id}-{media_type}{ext}'
@@ -298,7 +297,7 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
                 pending_task_download_media_heavy = make_file_download(media_obj, media_obj.file_size, media_path)
 
     if message.forward_origin:
-        plogger.info.plogger.info(message.forward_origin)
+        logger.info(message.forward_origin)
         forward = message.forward_origin
         context['forward_date'] = forward.date
 
