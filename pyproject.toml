@@ -21,8 +21,9 @@ pyyaml = ">=6.0.1"
 
 [tool.poetry.scripts]
 telepostkeeper = "telepostkeeper.telepostkeeper:main"
-telepostkeeper-timekiller = "telepostkeeper.timekiller:main"
 telepostkeeper-frontend = "telepostkeeper.frontend:main"
+
+timekiller = "telepostkeeper.timekiller:main"
 
 
 [build-system]

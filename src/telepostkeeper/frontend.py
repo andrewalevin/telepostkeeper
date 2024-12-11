@@ -18,7 +18,7 @@ if not store or store == ".":
 else:
     store = pathlib.Path(store.strip())
 store.mkdir(parents=True, exist_ok=True)
-print('🏈️ store: ', store)
+print('🏈️ Store: ', store)
 
 current_dir = os.path.dirname(__file__)
 templates_dir = os.path.join(current_dir, "templates")
