@@ -23,12 +23,6 @@ print('🏈️ store: ', store)
 current_dir = os.path.dirname(__file__)
 templates_dir = os.path.join(current_dir, "templates")
 
-print('template_dir: ', templates_dir)
-print('type: ', type(templates_dir))
-
-print('template_dir ITER: ', pathlib.Path(templates_dir).iterdir())
-
-
 template_env = Environment(loader=FileSystemLoader(templates_dir))
 
 
@@ -163,15 +157,12 @@ async def make_index_store():
 
 
 
-
-
 def main():
     print('🏞 Frontend: ')
 
-    print('🏞 Store Index: ')
     asyncio.run(make_index_store())
 
-    print('🏞 end.')
+    print('✅ Success!')
 
 
 if __name__ == '__main__':

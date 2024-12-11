@@ -5,8 +5,6 @@ import sys
 from datetime import datetime
 import asyncio
 from typing import Optional
-
-import yaml
 from dotenv import load_dotenv
 import os
 from telegram import Update, Video, Document, Audio, Message, Chat, PhotoSize
@@ -24,9 +22,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 ENV_NAME_BOT_TOKEN = 'TPK_BOT_TOKEN'
-ENV_NAME_STORE = 'TPK_STORE_DIR'
-ENV_NAME_CHANNELS = 'TPK_CHANNELS_IDS_LIST'
-ENV_NAME_CHANNELS_ENCRYPTED = 'TPK_CHANNELS_IDS_LIST_ENCRYPTED'
 
 load_dotenv()
 
@@ -35,7 +30,7 @@ if not token:
     logger.info(f'🔴 No {ENV_NAME_BOT_TOKEN} variable set in env. Make add and restart bot.')
     sys.exit()
 
-store = os.getenv(ENV_NAME_STORE)
+store = os.getenv('TPK_STORE_DIR')
 if not store or store == ".":
     store = pathlib.Path("..")
 else:
@@ -43,10 +38,10 @@ else:
 store.mkdir(parents=True, exist_ok=True)
 logger.info(f'🏈️ store: {store}')
 
-channels_list = [int(item) for item in os.getenv(ENV_NAME_CHANNELS, '').strip().split(',') if item.isdigit()]
+channels_list = [int(item) for item in os.getenv('TPK_CHANNELS_IDS_LIST', '').strip().split(',') if item.isdigit()]
 logger.info(f'🏈️ channels_list: {channels_list}')
 
-channels_list_encrypted = [int(item) for item in os.getenv(ENV_NAME_CHANNELS_ENCRYPTED, '').strip().split(',') if item.isdigit()]
+channels_list_encrypted = [int(item) for item in os.getenv('TPK_CHANNELS_IDS_LIST_ENCRYPTED', '').strip().split(',') if item.isdigit()]
 logger.info(f'🏈️ channels_list_encrypted: {channels_list_encrypted}')
 
 skip_download_media_types = []
@@ -58,12 +53,6 @@ for _media_type in MEDIA_TYPES_ALL:
     if value == 'true':
         skip_download_media_types.append(_media_type)
 logger.info(f'🏈️ skip_download_media_types: {skip_download_media_types}')
-
-skip_download_bigger = 987654321
-if env_max_file_size := os.getenv(f'TPK_SKIP_DOWNLOAD_BIGGER', ''):
-    if env_max_file_size.isdigit():
-        skip_download_bigger = max(10, min(int(env_max_file_size), skip_download_bigger))
-logger.info(f'🏈️ skip_download_bigger: {skip_download_bigger}')
 
 skip_download_thumbnail = False
 if env_skip_down_thumb := os.getenv(f'TPK_SKIP_DOWNLOAD_THUMBNAIL', '').lower():
@@ -84,7 +73,7 @@ if _iv_base64 := os.getenv(f'TPK_ENCRYPT_AES_IV_BASE64', ''):
 if encrypt_aes_key_base64 and encrypt_aes_iv_base64:
     logger.info('🏈️ Encription key and IV set')
 else:
-    logger.info('🏈🔴️ Encription key and IV id NOT set')
+    logger.info('🔴️ Encription key and IV id NOT set')
 
 # todo Refactor this Envs
 
@@ -183,10 +172,10 @@ async def make_file_download(media_obj: any, file_size: int, path_media_obj: pat
 
 
 def identify_media_type(message: Message) -> Optional[str]:
-    for _media_type in MEDIA_TYPES_ALL:
-        if hasattr(message, _media_type):
-            if getattr(message, _media_type):
-                return _media_type
+    for local_media_type in MEDIA_TYPES_ALL:
+        if hasattr(message, local_media_type):
+            if getattr(message, local_media_type):
+                return local_media_type
     return ''
 
 
@@ -280,10 +269,7 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
         if ext := await get_extension_media_heavy_object(media_type, media_obj):
             media_path = post_dir / f'{message.message_id}-{media_type}{ext}'
             context['path'] = media_path.as_posix()
-            if media_obj.file_size > skip_download_bigger:
-                logger.info('Skipped Max File size')
-                context['skip_download'] = f'max_file_size-{skip_download_bigger}'
-            elif media_type in skip_download_media_types:
+            if media_type in skip_download_media_types:
                 logger.info('Skipped Type')
                 context['skip_download'] = f'file_type'
             else:
@@ -365,7 +351,7 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 def run_bot():
-    logger.info('Bot is running ... ')
+    logger.info('🚀 Bot is running ... ')
 
     application = ApplicationBuilder().token(token).build()
 
