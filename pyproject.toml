@@ -2,7 +2,7 @@
 [tool.poetry]
 name = "telepostkeeper"
 version = "0.1.24"
-description = "💌 telepostkeeper"
+description = "💌 A Python tool to automate and manage Telegram channel content with encryption and scheduling support."
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
 packages = [
@@ -17,7 +17,7 @@ python-telegram-bot = ">=20.3"  # Replace with the latest version if necessary
 pycryptodome = ">=3.18.0"       # Replace with the latest version if necessary
 python-dotenv = ">=1.0.0"       # Replace with the latest version if necessary
 pyyaml = ">=6.0.1"
-
+bleach = ">=6.2"
 
 [tool.poetry.scripts]
 telepostkeeper = "telepostkeeper.telepostkeeper:main"

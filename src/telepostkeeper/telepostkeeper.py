@@ -178,7 +178,6 @@ def identify_media_type(message: Message) -> Optional[str]:
                 return local_media_type
     return ''
 
-
 async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.channel_post:
         return
@@ -226,7 +225,7 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
 
     if media_type == 'text':
         if message.text:
-            context['text'] = message.text_html
+            context['text'] = message.text_html_urled
 
     elif media_type == 'location':
         if message.location:
@@ -238,7 +237,7 @@ async def handler_channel_post(update: Update, context: ContextTypes.DEFAULT_TYP
             context['media_group_id'] = message.media_group_id
 
         if message.caption:
-            context['caption'] = message.caption_html
+            context['caption'] = message.caption_html_urled
 
         media_obj = getattr(message, media_type)
 

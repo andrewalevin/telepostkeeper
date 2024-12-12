@@ -19,10 +19,20 @@
 
                 <div class="card-body">
                     <h4>{{ post.title }}</h4>
-                    <p>{{ post.date }}</p>
+                    <p class="post-date {{ post.encrypted_class }}">{{ post.date }}</p>
+
                     {% if post.text %}
-                        <p>{{ post.text }}</p>
+                    <p class="post-text {{ post.encrypted_class }}">
+                        {{ post.text | safe }}
+                    </p>
                     {% endif %}
+
+                    {% if post.path %}
+                    <p>
+                        <span class="post-file {{ post.encrypted_class }}">🗂 File: </span><a href="{{ post.path }}" target="_blank">{{ post.path }}</a>
+                    </p>
+                    {% endif %}
+
                 </div>
             </div>
         {% endfor %}

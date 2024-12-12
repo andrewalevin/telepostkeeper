@@ -1,8 +1,11 @@
 import asyncio
 import os
 import pathlib
+import pprint
+import re
 from datetime import datetime
 
+import bleach
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 
@@ -26,6 +29,46 @@ templates_dir = os.path.join(current_dir, "templates")
 template_env = Environment(loader=FileSystemLoader(templates_dir))
 
 
+def tuning_convert_tg_emoji_to_a(html: str) -> str:
+    """
+    Converts <tg-emoji> tags to <a> tags with a tg://emoji?id=... URL.
+
+    Args:
+        html (str): The HTML block to process.
+
+    Returns:
+        str: The modified HTML.
+    """
+    # Regex to match <tg-emoji> tags and capture emoji-id and inner content
+    tg_emoji_pattern = r'<tg-emoji\s+emoji-id="([^"]+)">(.*?)</tg-emoji>'
+
+    # Function to replace <tg-emoji> with <a> tags
+    def replace_tag(match):
+        emoji_id = match.group(1)  # Capture emoji-id
+        inner_content = match.group(2)  # Capture inner content
+        return f'<a href="tg://emoji?id={emoji_id}" class="tg-emoji">{inner_content}</a>'
+
+    # Perform substitution
+    return re.sub(tg_emoji_pattern, replace_tag, html)
+
+def tuning_date(date: str) -> str:
+
+    # Parse the string into a datetime object
+    try:
+        date_obj = datetime.fromisoformat(date)
+    except Exception as e:
+        return date
+
+    # Remove the timezone info by converting it to a naive datetime object (without timezone)
+    date_naive = date_obj.replace(tzinfo=None)
+
+    # Convert back to string if needed
+    long_space = '\u00A0'
+    date_naive_str = date_naive.strftime(f"%Y-%m-%d {long_space} %H:%M:%S")
+
+    return date_naive_str
+
+
 async def make_index_post(post: pathlib.Path, about: dict) -> dict:
     print('🔹 Post: ', post)
 
@@ -34,14 +77,33 @@ async def make_index_post(post: pathlib.Path, about: dict) -> dict:
     if not data:
         return {}
 
+    print('🥑 DATA')
+    pprint.pprint(data)
+    print()
+
     context = dict()
     context['title'] = f'Post {post.stem}'
 
+    is_encrypted_post = False
+    if data.get('encryption', ''):
+        print('🔐 ENCRYPTION 🔐')
+        is_encrypted_post = True
+        context['encrypted_class'] = 'encrypted'
+
+    if data.get('date'):
+        context['date'] = tuning_date(str(data.get('date')))
+
+    context['text'] = ''
     if data.get('text'):
         context['text'] = data.get('text')
 
     if data.get('caption'):
         context['text'] = data.get('caption')
+
+    context['text'] = context['text'].replace('\n', '<br />')
+
+    context['text'] = tuning_convert_tg_emoji_to_a(context['text'])
+
 
     if thumbnail_path := data.get('thumbnail_path'):
         thumbnail_path = pathlib.Path(thumbnail_path)
@@ -55,6 +117,15 @@ async def make_index_post(post: pathlib.Path, about: dict) -> dict:
             if path.exists():
                 if path.suffix != '.aes':
                     context['photo'] = path.name
+
+    if path := data.get('path'):
+        path = pathlib.Path(path)
+        context['path'] = path.name
+
+    print()
+    print('CONTEXT')
+    pprint.pprint(context)
+    print()
 
     return context
 
@@ -112,10 +183,13 @@ async def make_index_chat(chat: pathlib.Path, about: dict):
         months = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), year.iterdir())), reverse=True)
         months_context = []
         for month in months:
+            month = pathlib.Path(month)
             await make_index_month(month, about)
 
-            months_context.append({'title': datetime.strptime(month.name, "%m").strftime("%B"),
-                'folder': month,})
+            months_context.append({
+                'title': datetime.strptime(month.name, "%m").strftime("%B"),
+                'folder': month.relative_to(chat)
+            })
         years_context.append({'title': year.name, 'months': months_context})
 
     html_data = template_env.get_template("chat.html").render({'title': f'{chat.name}', 'years': years_context})

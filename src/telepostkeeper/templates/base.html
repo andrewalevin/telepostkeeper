@@ -40,6 +40,28 @@
             max-width: fit-content;
         }
 
+        .tg-emoji{
+            text-decoration: none;
+            pointer-events: none;
+            color: inherit;
+            padding: 0 .5rem;
+        }
+
+        .post-date.encrypted::before {
+            content: "🔐 date (encrypted): ";
+            margin-right: .5rem;
+        }
+
+        .post-text.encrypted::before {
+            content: "🔐 text (encrypted): ";
+            margin-right: .5rem;
+        }
+        .post-file.encrypted::after {
+            content: "🔐 (encrypted): ";
+            margin-right: .5rem;
+        }
+
+
     </style>
 
 </head>
