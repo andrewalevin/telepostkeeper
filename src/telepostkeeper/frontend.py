@@ -131,13 +131,13 @@ async def make_index_post(post: pathlib.Path, about: dict) -> dict:
 
 
 
-async def make_index_month(month: pathlib.Path, about: dict):
+async def make_index_month(month: pathlib.Path, chat_about: dict):
     print('🔶 Month: ', month)
 
     posts = sorted(list(filter(lambda file: file.is_file() and file.suffix == '.yaml', month.iterdir())), reverse=True)
     posts_cnt = []
     for post in posts:
-        post_cnt = await make_index_post(post, about)
+        post_cnt = await make_index_post(post, chat_about)
         if not post_cnt:
             continue
         posts_cnt.append(post_cnt)
@@ -148,9 +148,12 @@ async def make_index_month(month: pathlib.Path, about: dict):
     description = month.parent.parent.name
 
     html_data = template_env.get_template("month.html").render({
-        'title': title,
-        'description': description,
-        'posts': posts_cnt})
+        'page_title': f'{title} | {chat_about.get('title', '')}',
+        'header_title': f'{title}',
+        'header_description': f'{chat_about.get('title', '')}',
+        'header_description_href': '../../',
+        'posts': posts_cnt
+    })
 
     with month.joinpath('index.html').open('w') as f:
         f.write(html_data)
@@ -172,19 +175,19 @@ async def make_index_year(year: pathlib.Path, about: dict):
         f.write(html_data)
 
 
-async def make_index_chat(chat: pathlib.Path, about: dict):
+async def make_index_chat(chat: pathlib.Path, chat_about: dict):
     print('🟢 Chat: ', chat)
 
     years = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), chat.iterdir())), reverse=True)
     years_context = []
     for year in years:
-        await make_index_year(year, about)
+        await make_index_year(year, chat_about)
 
         months = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), year.iterdir())), reverse=True)
         months_context = []
         for month in months:
             month = pathlib.Path(month)
-            await make_index_month(month, about)
+            await make_index_month(month, chat_about)
 
             months_context.append({
                 'title': datetime.strptime(month.name, "%m").strftime("%B"),
@@ -192,7 +195,13 @@ async def make_index_chat(chat: pathlib.Path, about: dict):
             })
         years_context.append({'title': year.name, 'months': months_context})
 
-    html_data = template_env.get_template("chat.html").render({'title': f'{chat.name}', 'years': years_context})
+    html_data = template_env.get_template("chat.html").render({
+        'page_title': f'Chat - {chat_about.get('title', '')}',
+        'header_title': f'Chat - {chat_about.get('title', '')}',
+        'header_description': f'store',
+        'header_description_href': '../',
+        'years': years_context
+    })
 
     with chat.joinpath('index.html').open('w') as f:
         f.write(html_data)
@@ -224,7 +233,12 @@ async def make_index_store():
 
         chats_all_context.append(context)
 
-    html_data = template_env.get_template("store.html").render({'title': f'Index of chats', 'chats': chats_all_context})
+    html_data = template_env.get_template("store.html").render({
+        'page_title': f'Index of chats',
+        'header_title': f'Index of chats',
+        'header_description': '',
+        'header_description_href': '',
+        'chats': chats_all_context})
 
     with store.joinpath('index.html').open('w') as f:
         f.write(html_data)

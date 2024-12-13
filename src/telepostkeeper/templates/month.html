@@ -3,8 +3,10 @@
 {% block topbar %}
     <div class="d-flex flex-row">
         <div class="col">
-            <h3>{{ title }}</h3>
-            <p class="text-body-secondary fw-normal mb-0">{{ description }}</p>
+            <h3>{{ header_title }}</h3>
+            <p class="text-body-secondary fw-normal mb-0">
+                <a href="{{ header_description_href }}" class="description text-body-secondary fw-normal mb-0">
+                    {{ header_description }}</a></p>
         </div>
     </div>
 {% endblock %}

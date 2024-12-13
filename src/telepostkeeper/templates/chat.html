@@ -1,7 +1,16 @@
 {% extends "base.html" %}
 
 {% block topbar %}
-    <h3>{{ title }}</h3>
+    <div class="d-flex flex-row">
+        <div class="col">
+            <h3>{{ header_title }}</h3>
+            <p class="text-body-secondary fw-normal mb-0">
+                <a href="{{ header_description_href }}" class="description text-body-secondary fw-normal mb-0">
+                    {{ header_description }}
+                </a></p>
+
+        </div>
+    </div>
 {% endblock %}
 
 {% block content %}
