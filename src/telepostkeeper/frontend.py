@@ -194,6 +194,7 @@ async def make_index_year(year: pathlib.Path, about: dict):
         months_context.append({'title': datetime.strptime(month.name, "%m").strftime("%B"), 'folder': month,})
 
     html_data = template_env.get_template("year.html").render({
+        'header_block_class': 'border-bottom',
         'page_title': f'{year.name}',
         'header_title': f'{year.name}',
         'months': months_context})
@@ -223,6 +224,7 @@ async def make_index_chat(chat: pathlib.Path, chat_about: dict):
         years_context.append({'title': year.name, 'months': months_context})
 
     html_data = template_env.get_template("chat.html").render({
+        'header_block_class': 'border-bottom',
         'page_title': f'Chat - {chat_about.get('title', '')}',
         'header_title': f'Chat - {chat_about.get('title', '')}',
         'header_description': f'store',
@@ -261,6 +263,7 @@ async def make_index_store():
         chats_all_context.append(context)
 
     html_data = template_env.get_template("store.html").render({
+        'header_block_class': 'border-bottom',
         'page_title': f'Index of chats',
         'header_title': f'Index of chats',
         'header_description': '',
