@@ -70,8 +70,13 @@ def tuning_date(date: str) -> str:
     return date_naive_str
 
 
-def get_real_chat_id(chat_id_raw: int) -> int:
-    return - chat_id_raw - 1000000000000
+def get_real_chat_id(chat_id_raw: int) -> str:
+    try:
+        out = str(- chat_id_raw - 1000000000000)
+    except Exception as e:
+        return str(chat_id_raw)
+
+    return out
 
 
 async def make_index_post(post: pathlib.Path, about: dict) -> dict:
@@ -129,7 +134,7 @@ async def make_index_post(post: pathlib.Path, about: dict) -> dict:
 
     if data.get('forward_chat_id'):
 
-        _chat_id = str(get_real_chat_id(data.get('forward_chat_id')))
+        _chat_id = get_real_chat_id(data.get('forward_chat_id'))
         _date = data.get('forward_date', '')
         _date = tuning_date(str(_date))
 
