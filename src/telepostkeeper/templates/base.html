@@ -54,17 +54,33 @@
         }
 
         .post-date.encrypted::before {
-            content: "🔐 date (encrypted): ";
+            content: "date:";
             margin-right: .5rem;
         }
 
+        .post-date.encrypted::after {
+            content: "🔐encrypted";
+            margin-left: .5rem;
+        }
+
         .post-text.encrypted::before {
-            content: "🔐 text (encrypted): ";
+            content: "Text: ";
             margin-right: .5rem;
         }
-        .post-file.encrypted::after {
-            content: "🔐 (encrypted): ";
+
+        .post-text.encrypted::after {
+            content: "🔐encrypted";
+            margin-left: .5rem;
+        }
+
+
+        .post-file.header {
             margin-right: .5rem;
+        }
+
+        .post-file.encrypted::after {
+            content: "🔐 encrypted";
+            margin-left: .5rem;
         }
 
         a.description {

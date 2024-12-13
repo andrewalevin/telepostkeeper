@@ -64,9 +64,14 @@ def tuning_date(date: str) -> str:
 
     # Convert back to string if needed
     long_space = '\u00A0'
+    long_space = '-'
     date_naive_str = date_naive.strftime(f"%Y-%m-%d {long_space} %H:%M:%S")
 
     return date_naive_str
+
+
+def get_real_chat_id(chat_id_raw: int) -> int:
+    return - chat_id_raw - 1000000000000
 
 
 async def make_index_post(post: pathlib.Path, about: dict) -> dict:
@@ -122,6 +127,22 @@ async def make_index_post(post: pathlib.Path, about: dict) -> dict:
         path = pathlib.Path(path)
         context['path'] = path.name
 
+    if data.get('forward_chat_id'):
+
+        _chat_id = str(get_real_chat_id(data.get('forward_chat_id')))
+        _date = data.get('forward_date', '')
+        _date = tuning_date(str(_date))
+
+        context['forward'] = {
+            'chat_id': _chat_id,
+            'title': data.get('forward_chat_title', ''),
+            'username': data.get('forward_chat_username', ''),
+            'date': _date,
+        }
+
+        print(context['forward'])
+
+
     print()
     print('CONTEXT')
     pprint.pprint(context)
@@ -145,8 +166,6 @@ async def make_index_month(month: pathlib.Path, chat_about: dict):
     month_full_name = datetime.strptime(month.name, "%m").strftime("%B")
 
     title = f'{month_full_name} {month.parent.name}'
-    description = month.parent.parent.name
-
     html_data = template_env.get_template("month.html").render({
         'page_title': f'{title} | {chat_about.get('title', '')}',
         'header_title': f'{title}',
@@ -169,7 +188,10 @@ async def make_index_year(year: pathlib.Path, about: dict):
 
         months_context.append({'title': datetime.strptime(month.name, "%m").strftime("%B"), 'folder': month,})
 
-    html_data = template_env.get_template("year.html").render({'title': f'{year.name}', 'months': months_context})
+    html_data = template_env.get_template("year.html").render({
+        'page_title': f'{year.name}',
+        'header_title': f'{year.name}',
+        'months': months_context})
 
     with year.joinpath('index.html').open('w') as f:
         f.write(html_data)

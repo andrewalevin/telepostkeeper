@@ -21,18 +21,48 @@
 
                 <div class="card-body">
                     <h4>{{ post.title }}</h4>
-                    <p class="post-date {{ post.encrypted_class }}">{{ post.date }}</p>
+                    <p class="post-date text-black-50 {{ post.encrypted_class }}">
+                        {{ post.date }}</p>
 
-                    {% if post.text %}
-                    <p class="post-text {{ post.encrypted_class }}">
-                        {{ post.text | safe }}
-                    </p>
-                    {% endif %}
 
-                    {% if post.path %}
-                    <p>
-                        <span class="post-file {{ post.encrypted_class }}">🗂 File: </span><a href="{{ post.path }}" target="_blank">{{ post.path }}</a>
-                    </p>
+                    {% if post.forward %}
+
+                        <div class="pl-3 border-start border-3 border-primary">
+                            <p class="px-2">
+                                <span class="fw-bold text-primary">{{ post.forward.title }}</span>
+                                <span class="small px-1 text-black-50">{{ post.forward.date }}</span>
+                            </p>
+
+                            <div class="px-3">
+                                {% if post.text %}
+                                <p class="post-text {{ post.encrypted_class }}">
+                                    {{ post.text | safe }}
+                                </p>
+                                {% endif %}
+
+                                {% if post.path %}
+                                <p>
+                                    <span class="post-file {{ post.encrypted_class }}">🗂 File: </span><a href="{{ post.path }}" target="_blank">{{ post.path }}</a>
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+
+                        {% if post.text %}
+                        <p class="post-text {{ post.encrypted_class }}">
+                            {{ post.text | safe }}
+                        </p>
+                        {% endif %}
+
+                        {% if post.path %}
+                        <p class="post-file {{ post.encrypted_class }}">
+                            <span class="header">🗂 File: </span>
+                            <a href="{{ post.path }}" target="_blank">{{ post.path }}</a>
+                        </p>
+                        {% endif %}
+
+
                     {% endif %}
 
                 </div>
