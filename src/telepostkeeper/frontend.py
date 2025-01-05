@@ -5,7 +5,6 @@ import pprint
 import re
 from datetime import datetime
 
-import bleach
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 
@@ -182,6 +181,16 @@ async def make_index_month(month: pathlib.Path, chat_about: dict):
     with month.joinpath('index.html').open('w') as f:
         f.write(html_data)
 
+    md_data = template_env.get_template("month.md").render({
+        'header_title': f'{title} - {chat_about.get('title', '')}',
+        'header_description': f'{chat_about.get('title', '')}',
+        'header_description_href': '../../',
+        'posts': posts_cnt
+    })
+
+    with month.joinpath('README.md').open('w') as f:
+        f.write(md_data)
+
 
 async def make_index_year(year: pathlib.Path, about: dict):
     print('🔹 Year: ', year)
@@ -201,6 +210,15 @@ async def make_index_year(year: pathlib.Path, about: dict):
 
     with year.joinpath('index.html').open('w') as f:
         f.write(html_data)
+
+    md_data = template_env.get_template("year.md").render({
+        'header_title': f'{year.name} - {about.get('title', '')}',
+        'months': months_context})
+
+    with year.joinpath('README.md').open('w') as f:
+        f.write(md_data)
+
+
 
 
 async def make_index_chat(chat: pathlib.Path, chat_about: dict):
@@ -234,6 +252,16 @@ async def make_index_chat(chat: pathlib.Path, chat_about: dict):
 
     with chat.joinpath('index.html').open('w') as f:
         f.write(html_data)
+
+    md_data = template_env.get_template("chat.md").render({
+        'header_title': f'Chat - {chat_about.get('title', '')}',
+        'header_description': f'store',
+        'header_description_href': '../',
+        'years': years_context
+    })
+
+    with chat.joinpath('README.md').open('w') as f:
+        f.write(md_data)
 
 
 async def make_index_store():
@@ -270,8 +298,15 @@ async def make_index_store():
         'header_description_href': '',
         'chats': chats_all_context})
 
+    md_data = template_env.get_template("store.md").render({
+        'header_title': f'Index of chats',
+        'chats': chats_all_context})
+
     with store.joinpath('index.html').open('w') as f:
         f.write(html_data)
+
+    with store.joinpath('README.md').open('w') as f:
+        f.write(md_data)
 
 
 

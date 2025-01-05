@@ -2,6 +2,6 @@
 
 pip install -e . --no-deps
 
-timekiller "telepostkeeper" --timeout 20
+# timekiller "telepostkeeper" --timeout 20
 
-#telepostkeeper-frontend
+telepostkeeper-frontend
