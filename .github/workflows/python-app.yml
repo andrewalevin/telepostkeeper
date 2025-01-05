@@ -41,7 +41,7 @@ jobs:
       run: poetry build
 
     - name: 💾 Python PyPI. Publish package
-      uses: pypa/gh-action-pypi-publish@v1.8.6
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ env.PYPI_API_TOKEN }}
