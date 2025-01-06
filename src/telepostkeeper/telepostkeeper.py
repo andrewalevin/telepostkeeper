@@ -5,7 +5,6 @@ import sys
 from datetime import datetime
 import asyncio
 from typing import Optional
-from dotenv import load_dotenv
 import os
 from telegram import Update, Video, Document, Audio, Message, Chat, PhotoSize
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
@@ -23,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 ENV_NAME_BOT_TOKEN = 'TPK_BOT_TOKEN'
 
-load_dotenv()
 
 token = os.getenv(ENV_NAME_BOT_TOKEN, '').strip()
 if not token:
