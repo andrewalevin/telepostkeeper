@@ -12,11 +12,11 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.9"
-jinja2 = ">=3.1.2"
-python-telegram-bot = ">=20.3"  # Replace with the latest version if necessary
-pycryptodome = ">=3.18.0"       # Replace with the latest version if necessary
-python-dotenv = ">=1.0.0"       # Replace with the latest version if necessary
+python-telegram-bot = ">=20.3"
 pyyaml = ">=6.0.1"
+pycryptodome = ">=3.18.0"
+jinja2 = ">=3.1.2"
+
 
 [tool.poetry.scripts]
 telepostkeeper = "telepostkeeper.telepostkeeper:main"

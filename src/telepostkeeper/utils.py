@@ -28,6 +28,7 @@ async def read_yaml(path: pathlib.Path) -> any:
         print("Failed to load YAML from %s: %s", path, e)
     except Exception as e:
         print("Unexpected error reading %s: %s", path, e)
+        return None
 
     return data
 

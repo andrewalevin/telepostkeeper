@@ -2,6 +2,8 @@
 
 pip install -e . --no-deps
 
-# timekiller "telepostkeeper" --timeout 20
+export $(grep -v '^#' .env | xargs)
+
+timekiller "telepostkeeper" --timeout 20
 
 telepostkeeper-frontend

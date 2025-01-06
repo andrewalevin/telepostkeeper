@@ -1,16 +1,19 @@
 import asyncio
+import logging
 import os
 import pathlib
-import pprint
 import re
+import sys
 from datetime import datetime
-
-from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
-
 from telepostkeeper.utils import read_yaml
 
-load_dotenv()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+logger = logging.getLogger(__name__)
 
 ENV_NAME_STORE = 'TPK_STORE_DIR'
 
@@ -20,7 +23,7 @@ if not store or store == ".":
 else:
     store = pathlib.Path(store.strip())
 store.mkdir(parents=True, exist_ok=True)
-print('🏈️ Store: ', store)
+logger.info('🏈️ Store: ', store)
 
 current_dir = os.path.dirname(__file__)
 templates_dir = os.path.join(current_dir, "templates")
@@ -79,23 +82,16 @@ def get_real_chat_id(chat_id_raw: int) -> str:
 
 
 async def make_index_post(post: pathlib.Path, about: dict) -> dict:
-    print('🔹 Post: ', post)
-
     data = await read_yaml(post)
 
     if not data:
         return {}
-
-    print('🥑 DATA')
-    pprint.pprint(data)
-    print()
 
     context = dict()
     context['title'] = f'Post {post.stem}'
 
     is_encrypted_post = False
     if data.get('encryption', ''):
-        print('🔐 ENCRYPTION 🔐')
         is_encrypted_post = True
         context['encrypted_class'] = 'encrypted'
 
@@ -112,7 +108,6 @@ async def make_index_post(post: pathlib.Path, about: dict) -> dict:
     context['text'] = context['text'].replace('\n', '<br />')
 
     context['text'] = tuning_convert_tg_emoji_to_a(context['text'])
-
 
     if thumbnail_path := data.get('thumbnail_path'):
         thumbnail_path = pathlib.Path(thumbnail_path)
@@ -144,21 +139,11 @@ async def make_index_post(post: pathlib.Path, about: dict) -> dict:
             'date': _date,
         }
 
-        print(context['forward'])
-
-
-    print()
-    print('CONTEXT')
-    pprint.pprint(context)
-    print()
-
     return context
 
 
 
 async def make_index_month(month: pathlib.Path, chat_about: dict):
-    print('🔶 Month: ', month)
-
     posts = sorted(list(filter(lambda file: file.is_file() and file.suffix == '.yaml', month.iterdir())), reverse=True)
     posts_cnt = []
     for post in posts:
@@ -193,8 +178,6 @@ async def make_index_month(month: pathlib.Path, chat_about: dict):
 
 
 async def make_index_year(year: pathlib.Path, about: dict):
-    print('🔹 Year: ', year)
-
     months = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), year.iterdir())), reverse=True)
     months_context = []
     for month in months:
@@ -222,7 +205,7 @@ async def make_index_year(year: pathlib.Path, about: dict):
 
 
 async def make_index_chat(chat: pathlib.Path, chat_about: dict):
-    print('🟢 Chat: ', chat)
+    logger.info('🟢 Chat: ', chat)
 
     years = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), chat.iterdir())), reverse=True)
     years_context = []
@@ -298,12 +281,12 @@ async def make_index_store():
         'header_description_href': '',
         'chats': chats_all_context})
 
+    with store.joinpath('index.html').open('w') as f:
+        f.write(html_data)
+
     md_data = template_env.get_template("store.md").render({
         'header_title': f'Index of chats',
         'chats': chats_all_context})
-
-    with store.joinpath('index.html').open('w') as f:
-        f.write(html_data)
 
     with store.joinpath('README.md').open('w') as f:
         f.write(md_data)
@@ -311,11 +294,11 @@ async def make_index_store():
 
 
 def main():
-    print('🏞 Frontend: ')
+    logger.info('🏞 Frontend: ')
 
     asyncio.run(make_index_store())
 
-    print('✅ Success!')
+    logger.info('✅ Success!')
 
 
 if __name__ == '__main__':

@@ -29,7 +29,7 @@ async def encrypt_aes(key_base64: str, iv_base64: str, plaintext: str) -> str:
 
 async def encrypt_aes_file(key_base64: str, iv_base64: str, path: pathlib.Path, output_path: pathlib.Path) -> Optional[pathlib.Path]:
     if not key_base64 or not iv_base64:
-        print('🔴 No key_base64 and iv_base64 is set!!!! Encription to void and return this text ')
+        print('🔴 No key_base64 and iv_base64 is set!!!! Encryption to void and return this text ')
         return
 
     if not path.exists():

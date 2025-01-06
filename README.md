@@ -38,6 +38,19 @@ Add the following in Settings > Secrets and Variables > Actions (Variables):
  - TPK_CHANNELS_IDS_LIST_ENCRYPTED: AES-encrypted list of channel IDs (if using encryption).
 
 
+Generate keys on any wabsite like this
+
+- key 256 bits (32 bytes) long
+- iv 128 bits (16 bytes) long
+
+
+https://generate.plus/en/base64
+
+To test decryption try there (all inputs in base64)
+
+https://emn178.github.io/online-tools/aes/decrypt/
+
+
  - TPK_SKIP_DOWNLOAD_TEXT
  - TPK_SKIP_DOWNLOAD_PHOTO
  - TPK_SKIP_DOWNLOAD_DOCUMENT
