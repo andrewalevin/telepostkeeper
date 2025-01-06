@@ -6,40 +6,25 @@
 
 ---
 
+### {{ post.title }}
+
 {% if post.photo %} 
 ![{{ post.photo }}]({{ post.photo }}) 
 {% endif %}
 
-### {{ post.title }}
+{% if post.text %}
+{{ post.text | safe }}
+{% endif %}
 
-{{ post.date }}
+{% if post.path %}
+- 🗂 file: [{{ post.path }}]({{ post.path }}) 
+{% endif %}
+
+- date: {{ post.date }}
 
 {% if post.forward %}
-
-{{ post.forward.title }}
-
-{{ post.forward.date }}
-
-{% if post.text %}
-{{ post.text | safe }}
-{% endif %}
-
-{% if post.path %}
-🗂 File: [{{ post.path }}]({{ post.path }}) 
-{% endif %}
-
-{% else %}
-
-{% if post.text %}
-
-{{ post.text | safe }}
-
-{% endif %}
-
-{% if post.path %}
-🗂 File: [{{ post.path }}]({{ post.path }}) 
-{% endif %}
-
+- forward title: {{ post.forward.title }}
+- forward date: {{ post.forward.date }}
 {% endif %}
 
 {% endfor %}
