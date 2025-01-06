@@ -23,7 +23,7 @@ if not store or store == ".":
 else:
     store = pathlib.Path(store.strip())
 store.mkdir(parents=True, exist_ok=True)
-logger.info('🏈️ Store: ', store)
+logger.info(f'🏈️ Store: {store}')
 
 current_dir = os.path.dirname(__file__)
 templates_dir = os.path.join(current_dir, "templates")
@@ -205,7 +205,7 @@ async def make_index_year(year: pathlib.Path, about: dict):
 
 
 async def make_index_chat(chat: pathlib.Path, chat_about: dict):
-    logger.info('🟢 Chat: ', chat)
+    logger.info(f'🔹 Chat: {chat}')
 
     years = sorted(list(filter(lambda file: file.is_dir() and file.name.isdigit(), chat.iterdir())), reverse=True)
     years_context = []
