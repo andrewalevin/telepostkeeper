@@ -16,15 +16,16 @@
 {{ post.text | safe }}
 {% endif %}
 
+{{ post.date }}
+
 {% if post.path %}
-- 🗂 file: [{{ post.path }}]({{ post.path }}) 
+🗂 file: [{{ post.path }}]({{ post.path }}) 
 {% endif %}
 
-- date: {{ post.date }}
+{% if post.forward %} 
+forward: {{ post.forward.title }} 
 
-{% if post.forward %}
-- forward title: {{ post.forward.title }}
-- forward date: {{ post.forward.date }}
+forward date: {{ post.forward.date }}
 {% endif %}
 
 {% endfor %}

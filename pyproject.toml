@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "telepostkeeper"
-version = "0.1.32"
+version = "0.1.33"
 description = "💌 A Python tool to automate and manage Telegram channel content with encryption and scheduling support."
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
